@@ -27,9 +27,9 @@ jobs:
 
       - name: Sync JSON files to other languages
         run: |
+          # Add new files
           for lang_dir in $(find . -mindepth 1 -maxdepth 1 -type d -name "*-*" | grep -E '[a-z]{2}-[A-Z]{2}'); do
             lang=$(basename "$lang_dir")
-            # Add new files
             find en-US -type f -name "*.json" | while read file; do
               new_file="${file/en-US/$lang}"
               if [ ! -f "$new_file" ]; then
@@ -38,8 +38,12 @@ jobs:
                 echo "Created $new_file in $lang"
               fi
             done
-            # Remove deleted files
-            if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+          done
+
+          # Remove deleted files
+          if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+            for lang_dir in $(find . -mindepth 1 -maxdepth 1 -type d -name "*-*" | grep -E '[a-z]{2}-[A-Z]{2}'); do
+              lang=$(basename "$lang_dir")
               git diff --name-status HEAD^ HEAD | grep '^D' | awk '{print $2}' | grep '^en-US/.*\.json$' | while read file; do
                 new_file="${file/en-US/$lang}"
                 if [ -f "$new_file" ]; then
@@ -47,17 +51,17 @@ jobs:
                   echo "Deleted $new_file in $lang"
                 fi
               done
-            else
-              echo "No previous commit found, skipping deletion step."
-            fi
-          done
+            done
+          else
+            echo "No previous commit found, skipping deletion step."
+          fi
 
       - name: Commit changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Sync translation files for other languages" || echo "No changes to commit"
+          git diff-index --quiet HEAD || git commit -m "Sync translation files for other languages"
 
       - name: Create a pull request
         uses: peter-evans/create-pull-request@v5
