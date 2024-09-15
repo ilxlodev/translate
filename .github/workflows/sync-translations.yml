@@ -18,25 +18,28 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "14"
-
-      - name: Cache Node.js modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          cache: "npm"
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --no-package-lock
 
       - name: Install jq (JSON processor)
         run: sudo apt-get install -y jq
 
-      - name: Remove deleted JSON files from other languages
+      - name: Sync JSON files to other languages
         run: |
           for lang_dir in $(find . -mindepth 1 -maxdepth 1 -type d -name "*-*" | grep -E '[a-z]{2}-[A-Z]{2}'); do
             lang=$(basename "$lang_dir")
+            # Add new files
+            find en-US -type f -name "*.json" | while read file; do
+              new_file="${file/en-US/$lang}"
+              if [ ! -f "$new_file" ]; then
+                mkdir -p "$(dirname "$new_file")"
+                cp "$file" "$new_file"
+                echo "Created $new_file in $lang"
+              fi
+            done
+            # Remove deleted files
             git diff --name-status HEAD^ HEAD | grep '^D' | awk '{print $2}' | grep '^en-US/.*\.json$' | while read file; do
               new_file="${file/en-US/$lang}"
               if [ -f "$new_file" ]; then
@@ -51,16 +54,16 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Remove deleted translation files for other languages"
+          git commit -m "Sync translation files for other languages"
 
       - name: Create a pull request
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Remove deleted translation files for other languages"
+          commit-message: "Sync translation files for other languages"
           branch: "auto/sync-translations-${{ github.ref_name }}"
           title: "Sync translations in ${{ github.ref_name }}"
-          body: "This PR removes deleted translation files for the branch **${{ github.ref_name }}**."
+          body: "This PR syncs translation files for the branch **${{ github.ref_name }}**."
           assignees: ilxlodev
           reviewers: ilxlodev
           labels: syncronization, blocked
