@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 jobs:
   clean_orphaned_files:
+    name: Clean up orphaned files
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
