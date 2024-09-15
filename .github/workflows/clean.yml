@@ -41,7 +41,7 @@ jobs:
 
       - name: Install jq (JSON processor)
         if: steps.cache-jq.outputs.cache-hit != 'true'
-        uses: dcarbone/install-jq-action
+        uses: dcarbone/install-jq-action@main
 
       - name: Clean orphaned JSON files from other languages
         run: |
