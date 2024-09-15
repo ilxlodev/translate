@@ -14,5 +14,6 @@
   "NORMAL_ROLE": "Normal role",
   "BOT_ROLE": "Bot role",
   "INTEGRATION_ROLE": "Integration role",
-  "PREMIUM_ROLE": "Premium subcriber role"
+  "PREMIUM_ROLE": "Premium subcriber role",
+  "TEST_ROLE": "Test role"
 }
