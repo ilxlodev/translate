@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
 jobs:
   sync_translations:
+    - name: Sync translations
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -27,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Install jq (JSON processor)
-        uses: dcarbone/install-jq-action
+        uses: chrislennon/action-install-jq@v1
       - name: Copy new JSON files to other languages
         run: |
           for lang_dir in $(find . -mindepth 1 -maxdepth 1 -type d -name "*-*" | grep -E '[a-z]{2}-[A-Z]{2}'); do
