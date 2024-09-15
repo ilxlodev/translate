@@ -24,8 +24,10 @@ jobs:
 
       - name: Copy new JSON files to other languages
         run: |
-          LANGUAGES=("es" "fr" "de" "it") # Lista de códigos de idiomas
-          for lang in "${LANGUAGES[@]}"; do
+          # Busca directorios que siguen el formato xx-XX (con guión)
+          for lang_dir in $(find . -mindepth 1 -maxdepth 1 -type d -name "*-*" | grep -E '[a-z]{2}-[A-Z]{2}'); do
+            # Extrae solo el nombre del directorio (sin la ruta completa)
+            lang=$(basename "$lang_dir")
             # Busca todos los archivos .json creados en la carpeta en-US
             for file in $(find en-US -type f -name "*.json"); do
               # Reemplaza "en-US" por el código de idioma en la ruta del archivo
@@ -34,10 +36,11 @@ jobs:
               if [ ! -f "$new_file" ]; then
                 mkdir -p "$(dirname "$new_file")"
                 cp "$file" "$new_file"
-                echo "Created $new_file"
+                echo "Created $new_file in $lang"
               fi
             done
           done
+
 
       - name: Commit and Push changes
         run: |
