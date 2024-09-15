@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 jobs:
   sync_translations:
-    - name: Sync translations
+    name: Sync translations
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
