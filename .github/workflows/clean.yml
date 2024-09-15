@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - "**/stable"
-      - "**/canary"
   workflow_dispatch:
 jobs:
   clean_orphaned_files:

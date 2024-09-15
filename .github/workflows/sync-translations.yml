@@ -5,7 +5,6 @@ on:
       - "en-US/**.json"
     branches:
       - "**/stable"
-      - "**/canary"
   workflow_dispatch:
 jobs:
   sync_translations:
