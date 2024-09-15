@@ -1,64 +1,67 @@
-name: Sync Translations
-
+name: Sync translations to other languages
 on:
-    push:
-      paths:
-        - 'en-US/**.json'
-      branches:
-        - '**/stable'
-        - '**/canary'
-    workflow_dispatch:  
-
+  push:
+    paths:
+      - "en-US/**.json"
+    branches:
+      - "**/stable"
+      - "**/canary"
+  workflow_dispatch:
 jobs:
   sync_translations:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Node.js (if needed)
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '14'
+          node-version: "14"
+
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm install
 
       - name: Install jq (JSON processor)
-        run: sudo apt-get install -y jq
+        uses: chrislennon/action-install-jq@v1
 
-      - name: Copy new JSON files to other languages
+      - name: Remove deleted JSON files from other languages
         run: |
-          # Busca directorios que siguen el formato xx-XX (con guión)
           for lang_dir in $(find . -mindepth 1 -maxdepth 1 -type d -name "*-*" | grep -E '[a-z]{2}-[A-Z]{2}'); do
-            # Extrae solo el nombre del directorio (sin la ruta completa)
             lang=$(basename "$lang_dir")
-            # Busca todos los archivos .json creados en la carpeta en-US
-            for file in $(find en-US -type f -name "*.json"); do
-              # Reemplaza "en-US" por el código de idioma en la ruta del archivo
-              new_file=$(echo "$file" | sed "s/en-US/$lang/")
-              # Crea el nuevo archivo si no existe
-              if [ ! -f "$new_file" ]; then
-                mkdir -p "$(dirname "$new_file")"
-                cp "$file" "$new_file"
-                echo "Created $new_file in $lang"
+            git diff --name-status HEAD^ HEAD | grep '^D' | awk '{print $2}' | grep '^en-US/.*\.json$' | while read file; do
+              new_file="${file/en-US/$lang}"
+              if [ -f "$new_file" ]; then
+                rm "$new_file"
+                echo "Deleted $new_file in $lang"
               fi
             done
           done
-
 
       - name: Commit changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Add new translation files for other languages"
+          git commit -m "Remove deleted translation files for other languages"
 
-      - name: Create Pull Request
+      - name: Create a pull request
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Add new translation files for other languages"
-          branch: "auto/sync-translations-${{ github.ref_name }}"  # Crea una rama automática basada en la rama actual
+          commit-message: "Remove deleted translation files for other languages"
+          branch: "auto/sync-translations-${{ github.ref_name }}"
           title: "Sync translations in ${{ github.ref_name }}"
-          body: "This PR adds new translation files for the branch ${{ github.ref_name }}."
-          base: ${{ github.ref_name }}  # Crea el PR contra la rama actual
-
+          body: "This PR removes deleted translation files for the branch **${{ github.ref_name }}**."
+          assignees: ilxlodev
+          reviewers: ilxlodev
+          labels: syncronization, blocked
+          base: ${{ github.ref_name }}
