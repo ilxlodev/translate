@@ -35,6 +35,7 @@ jobs:
           else
             echo "No changes to commit"
             exit 0
+          fi
 
       - name: Create a pull request
         uses: peter-evans/create-pull-request@v5
